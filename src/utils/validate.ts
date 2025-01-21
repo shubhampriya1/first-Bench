@@ -1,8 +1,6 @@
-import { Response } from 'express';
+export type Field = 'email' | 'password' | 'name' | 'phone';
 
-type Field = 'email' | 'password' | 'name' | 'phone';
-
-export const validate = (field: Field, value: string, res: Response) => {
+export const validate = (field: Field, value: string): { isValid: boolean; errorMessage: string } => {
   let isValid = false;
   let errorMessage = '';
 
@@ -13,12 +11,12 @@ export const validate = (field: Field, value: string, res: Response) => {
       if (!isValid) errorMessage = 'Email must be in a valid format.';
       break;
     case 'password':
-      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
       isValid = passwordRegex.test(value);
       if (!isValid) errorMessage = 'Password must be at least 8 characters long and contain letters and numbers.';
       break;
     case 'name':
-      isValid = value.length > 0;
+      isValid = value.trim().length > 0;
       if (!isValid) errorMessage = 'Name must not be empty.';
       break;
     case 'phone':
@@ -30,9 +28,5 @@ export const validate = (field: Field, value: string, res: Response) => {
       errorMessage = 'Invalid field type.';
   }
 
-  if (!isValid) {
-    return res.status(400).json({ error: errorMessage });
-  }
-
-  return true;
+  return { isValid, errorMessage };
 };
