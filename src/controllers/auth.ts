@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import jsonwebtoken from 'jsonwebtoken';
 import User from '../models/user';
-import { validate } from '../utils/validate';
+import { Field, validate } from '../utils/validate';
 
 export async function login(req: Request, res: Response) {
   const { email, password } = req.body;
@@ -13,10 +13,11 @@ export async function login(req: Request, res: Response) {
     });
   }
 
-  if (validate('email', email, res) && validate('password', password, res)) {
-    return res.status(400).json({
-      message: 'Invalid email or password',
-    });
+  for (const [field, value] of Object.entries({ email, password })) {
+    const { isValid, errorMessage } = validate(field as Field, value);
+    if (!isValid) {
+      return res.status(400).json({ message: errorMessage });
+    }
   }
 
   try {
@@ -75,17 +76,16 @@ export const register = async (req: Request, res: Response) => {
     });
   }
 
-  if (validate('name', name, res) && validate('email', email, res) && validate('password', password, res) && validate('phone', phone, res)) {
-    return res.status(400).json({
-      message: 'Invalid name, email, password, or phone',
-    });
+  // Validate all fields
+  for (const [field, value] of Object.entries({ name, email, password, phone })) {
+    const { isValid, errorMessage } = validate(field as Field, value);
+    if (!isValid) {
+      return res.status(400).json({ message: errorMessage });
+    }
   }
 
   try {
-    const userExists = await User.findOne({
-      email,
-    });
-
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({
         message: 'User already exists',
@@ -98,7 +98,7 @@ export const register = async (req: Request, res: Response) => {
       name,
       email,
       password: hashedPassword,
-      phone,
+      phoneNumber: phone,
     });
 
     const token = jsonwebtoken.sign({ id: user._id }, process.env.JWT_SECRET!, {
