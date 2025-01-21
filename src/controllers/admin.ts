@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/user';
-import { validate } from '../utils/validate';
+import { Field, validate } from '../utils/validate';
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -34,7 +34,12 @@ export const activateAccount = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Email is required' });
     }
 
-    validate(email, 'email', res);
+    for (const [field, value] of Object.entries({ email })) {
+      const { isValid, errorMessage } = validate(field as Field, value);
+      if (!isValid) {
+        return res.status(400).json({ message: errorMessage });
+      }
+    }
 
     await User.updateOne({ email: email }, { isActive: true });
 
@@ -52,7 +57,12 @@ export const createAdmin = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Email is required' });
   }
 
-  validate(email, 'email', res);
+  for (const [field, value] of Object.entries({ email })) {
+    const { isValid, errorMessage } = validate(field as Field, value);
+    if (!isValid) {
+      return res.status(400).json({ message: errorMessage });
+    }
+  }
 
   try {
     const userExists = await User.findOne({ email: email });
